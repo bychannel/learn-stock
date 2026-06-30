@@ -3,11 +3,43 @@ data/fetch_stock_data.py
 ========================
 A股股票数据批量获取工具
 """
+import sys
+import os
+
+# 将项目根目录加入 Python 路径
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import akshare as ak
 import pandas as pd
 import time
 from datetime import datetime
 from data.database import StockDataDB
+
+
+def fetch_single_stock(stock_code: str, start_date: str, end_date: str) -> pd.DataFrame:
+    """
+    获取单只股票历史日K线（使用新浪接口）
+
+    Args:
+        stock_code: 股票代码，如 "000001.SZ"
+        start_date: 开始日期，如 "20230101"
+        end_date: 结束日期，如 "20260630"
+
+    Returns:
+        DataFrame
+    """
+    # 转换代码格式：000001.SZ -> sz000001
+    symbol = stock_code.replace(".SZ", "").replace(".SH", "")
+    prefix = "sz" if stock_code.endswith(".SZ") else "sh"
+
+    # 使用新浪接口获取数据
+    df = ak.stock_zh_a_daily(
+        symbol=f"{prefix}{symbol}",
+        start_date=start_date.replace("-", ""),
+        end_date=end_date.replace("-", "")
+    )
+
+    return df
 
 
 class StockDataFetcher:
@@ -39,35 +71,28 @@ class StockDataFetcher:
         if end_date is None:
             end_date = datetime.now().strftime("%Y%m%d")
 
-        symbol = stock_code.replace(".SZ", "").replace(".SH", "")
-
         if show_progress:
-            print(f"📥 正在获取 {stock_code}...")
+            print(f"[GET] Fetching {stock_code}...")
 
         try:
-            df = ak.stock_zh_a_hist(
-                symbol=symbol,
-                period="daily",
-                start_date=start_date,
-                end_date=end_date
-            )
+            df = fetch_single_stock(stock_code, start_date, end_date)
 
             if len(df) > 0:
                 # 保存到数据库
                 self.db.save_daily_data(df, stock_code)
 
                 if show_progress:
-                    print(f"   ✅ {stock_code}: {len(df)} 条数据")
+                    print(f"   [OK] {stock_code}: {len(df)} records")
 
                 return df
             else:
                 if show_progress:
-                    print(f"   ⚠️ {stock_code}: 无数据")
+                    print(f"   [WARN] {stock_code}: No data")
                 return pd.DataFrame()
 
         except Exception as e:
             if show_progress:
-                print(f"   ❌ {stock_code}: {str(e)}")
+                print(f"   [ERROR] {stock_code}: {str(e)}")
             return pd.DataFrame()
 
     def fetch_batch(
@@ -106,9 +131,9 @@ class StockDataFetcher:
 
             # 进度显示
             if len(df) > 0:
-                print(f"[{i}/{total}] ✅ {code}: {len(df)} 条")
+                print(f"[{i}/{total}] [OK] {code}: {len(df)} records")
             else:
-                print(f"[{i}/{total}] ⚠️ {code}: 无数据")
+                print(f"[{i}/{total}] [WARN] {code}: No data")
 
             # 请求间隔，避免被限流
             if i < total:
@@ -185,7 +210,7 @@ if __name__ == "__main__":
     )
 
     # 验证数据
-    print("\n📊 数据验证:")
+    print("\n[INFO] Data verification:")
     df = fetcher.db.get_daily_data("000001.SZ", start_date="20260101")
     print(f"000001.SZ 最新数据: {len(df)} 条")
     if len(df) > 0:

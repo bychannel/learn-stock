@@ -3,6 +3,12 @@ data/update_data.py
 ===================
 增量更新股票数据（只更新数据库中不存在的日期）
 """
+import sys
+import os
+
+# 将项目根目录加入 Python 路径
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from datetime import datetime, timedelta
 from data.database import StockDataDB
 from data.fetch_stock_data import StockDataFetcher, STOCK_POOLS
@@ -53,8 +59,8 @@ def update_all(stock_pool: list = None, days_back: int = 30):
     # 计算更新起点（最近 N 天前，确保覆盖停牌期间）
     start_date = (datetime.now() - timedelta(days=days_back)).strftime("%Y%m%d")
 
-    print(f"\n增量更新模式: {start_date} 至今")
-    print(f"更新股票数: {len(stock_pool)}")
+    print(f"\n[INFO] Incremental update mode: {start_date} to today")
+    print(f"[INFO] Updating {len(stock_pool)} stocks")
 
     for code in stock_pool:
         # 获取该股票在数据库中的最新日期
@@ -62,12 +68,12 @@ def update_all(stock_pool: list = None, days_back: int = 30):
 
         # 如果数据库已有最新数据，从数据库最新日期的下一天开始
         if latest != start_date:
-            print(f"\n📥 更新 {code}: {latest} 至今")
+            print(f"\n[INFO] Updating {code}: {latest} to today")
             fetcher.fetch_single(code, latest, show_progress=True)
         else:
-            print(f"⏭️ {code}: 已是最新")
+            print(f"[SKIP] {code}: already up to date")
 
-    print("\n✅ 增量更新完成")
+    print("\n[OK] Incremental update completed")
 
 
 def get_data_status() -> dict:
@@ -97,10 +103,10 @@ def get_data_status() -> dict:
 
 if __name__ == "__main__":
     # 显示数据状态
-    print("📊 数据库数据状态:")
+    print("[INFO] Database status:")
     status = get_data_status()
     for s in status:
-        print(f"  {s['stock_code']}: {s['total_count']} 条 ({s['start_date']} ~ {s['end_date']})")
+        print(f"  {s['stock_code']}: {s['total_count']} records ({s['start_date']} ~ {s['end_date']})")
 
     # 执行增量更新
     print("\n" + "="*50)

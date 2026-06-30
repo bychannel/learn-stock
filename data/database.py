@@ -4,6 +4,7 @@ data/database.py
 数据访问层封装
 """
 import pymysql
+from sqlalchemy import create_engine
 from contextlib import contextmanager
 from typing import Optional, List, Dict, Any
 import pandas as pd
@@ -15,8 +16,12 @@ DB_CONFIG = {
     'password': '123456',
     'database': 'quant_db',
     'charset': 'utf8mb4',
-    'cursorclass': pymysql.cursors.DictCursor  # 返回字典而非元组
 }
+
+# SQLAlchemy 引擎（用于 pandas to_sql）
+engine = create_engine(
+    f"mysql+pymysql://{DB_CONFIG['user']}:{DB_CONFIG['password']}@{DB_CONFIG['host']}/{DB_CONFIG['database']}?charset={DB_CONFIG['charset']}"
+)
 
 
 @contextmanager
@@ -76,12 +81,24 @@ class StockDataDB:
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             """)
             conn.commit()
-            print("✅ 数据库表初始化完成")
+            print("[OK] Database tables initialized")
 
     def save_daily_data(self, df: pd.DataFrame, stock_code: str):
         """保存日K线数据"""
         df_copy = df.copy()
         df_copy['stock_code'] = stock_code
+
+        # 列名映射（兼容新浪接口的英文列名）
+        column_map = {
+            'date': 'trade_date',      # 新浪接口
+            '开盘': 'open',             # 东财接口
+            '最高': 'high',             # 东财接口
+            '最低': 'low',              # 东财接口
+            '收盘': 'close',            # 东财接口
+            '成交量': 'volume',         # 东财接口
+            '成交额': 'amount',         # 东财接口
+        }
+        df_copy = df_copy.rename(columns=column_map)
 
         # 添加计算字段
         if '涨跌幅' in df_copy.columns:
@@ -89,9 +106,9 @@ class StockDataDB:
         if '涨跌额' in df_copy.columns:
             df_copy['change_amount'] = df_copy['涨跌额']
 
-        with get_connection() as conn:
-            df_copy.to_sql('stock_daily', conn, if_exists='replace', index=False)
-            print(f"📦 {stock_code} 保存成功: {len(df_copy)} 条")
+        # 使用 SQLAlchemy 引擎
+        df_copy.to_sql('stock_daily', engine, if_exists='replace', index=False)
+        print(f"[OK] {stock_code} saved: {len(df_copy)} records")
 
     def get_daily_data(
         self,
@@ -100,21 +117,21 @@ class StockDataDB:
         end_date: Optional[str] = None
     ) -> pd.DataFrame:
         """读取日K线数据"""
-        sql = "SELECT * FROM stock_daily WHERE stock_code = %s"
+        conditions = ["stock_code = %s"]
         params = [stock_code]
 
         if start_date:
-            sql += " AND trade_date >= %s"
+            conditions.append("trade_date >= %s")
             params.append(start_date)
         if end_date:
-            sql += " AND trade_date <= %s"
+            conditions.append("trade_date <= %s")
             params.append(end_date)
 
-        sql += " ORDER BY trade_date"
+        sql = "SELECT * FROM stock_daily WHERE " + " AND ".join(conditions) + " ORDER BY trade_date"
 
-        with get_connection() as conn:
-            df = pd.read_sql(sql, conn, params=params)
-            return df
+        # 使用 tuple 作为 params
+        df = pd.read_sql(sql, engine, params=tuple(params))
+        return df
 
     def get_stock_list(self, market: Optional[str] = None) -> List[Dict]:
         """获取股票列表"""
