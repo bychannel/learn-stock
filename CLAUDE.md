@@ -24,7 +24,7 @@ Core philosophy: **self-built event-driven backtest framework** over third-party
 | Layer | Tools |
 |-------|-------|
 | Data acquisition | akshare (A-share stocks only) |
-| Storage | SQLite |
+| Storage | MySQL |
 | Analysis | pandas, numpy |
 | Visualization | matplotlib, seaborn, plotly |
 | Backtest | Custom event-driven (Week 3 of learning plan) |
