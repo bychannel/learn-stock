@@ -23,7 +23,7 @@ Core philosophy: **self-built event-driven backtest framework** over third-party
 
 | Layer | Tools |
 |-------|-------|
-| Data acquisition | yfinance (US stocks), akshare (A-share stocks) |
+| Data acquisition | akshare (A-share stocks only) |
 | Storage | SQLite |
 | Analysis | pandas, numpy |
 | Visualization | matplotlib, seaborn, plotly |
@@ -48,7 +48,7 @@ A-share stock data follows this naming convention:
 
 Python 3.10+ with conda/venv. Core dependencies:
 ```
-pandas numpy yfinance akshare matplotlib seaborn plotly sqlite3
+pandas numpy akshare matplotlib seaborn plotly sqlite3
 ```
 
 ## Development Workflow
