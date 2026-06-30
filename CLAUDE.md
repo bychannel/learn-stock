@@ -46,9 +46,37 @@ A-share stock data follows this naming convention:
 
 ## Python Environment
 
-Python 3.10+ with conda/venv. Core dependencies:
+Python 3.10+ with **uv** (faster, lighter than Anaconda). Core dependencies:
 ```
 pandas numpy akshare matplotlib seaborn plotly sqlite3
+```
+
+### 环境初始化（Linux 服务器）
+
+```bash
+# 安装 uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 创建虚拟环境
+uv venv quant_env --python 3.11
+source quant_env/bin/activate
+
+# 安装依赖
+uv pip install pandas numpy matplotlib seaborn plotly akshare jupyter
+```
+
+### 环境初始化（Windows 本地）
+
+```powershell
+# 安装 uv
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# 创建虚拟环境
+uv venv quant_env --python 3.11
+quant_env\Scripts\activate
+
+# 安装依赖
+uv pip install pandas numpy matplotlib seaborn plotly akshare jupyter
 ```
 
 ## Development Workflow

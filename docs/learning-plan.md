@@ -40,7 +40,7 @@
 
 | 周期 | 任务 | 重点 |
 |------|------|------|
-| Day 1-2 | 搭建 Python 数据环境 | anaconda / venv、jupyter notebook、必备库（pandas/numpy/yfinance/akshare） |
+| Day 1-2 | 搭建 Python 数据环境 | uv（轻量高速）+ jupyter notebook、必备库（pandas/numpy/akshare） |
 | Day 3-4 | 获取行情数据 | 用 akshare 获取 A 股历史 K 线（OHLCV）和实时行情数据 |
 | Day 5-6 | 数据存储方案 | SQLite 轻量存储、K线数据规范化存储结构设计 |
 | Day 7 | 输出 | 一个小脚本：自动抓取指定股票近3年日线数据并存入 SQLite |
